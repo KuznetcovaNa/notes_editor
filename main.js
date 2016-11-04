@@ -1,5 +1,5 @@
 function initial_editor(){
-    var notes_number = 0, tags_number = 0;
+    var notes_number = 0, tags_number = 0, tags_for_filter = [];
 
     function edit_note_html(note_id, text){
         var edited_note = document.getElementsByClassName(note_id)[0].firstChild;
@@ -11,8 +11,7 @@ function initial_editor(){
         note_div.className = note_id + " note_item";
         var text_div = document.createElement("div");
         text_div.className = "note_item_text";
-        var note_text = document.createTextNode(text);
-        text_div.appendChild(note_text);
+        text_div.innerHTML = text;
         note_div.appendChild(text_div);
         var edit_btn = document.createElement("input");
         edit_btn.className = "btn btn_edit_note";
@@ -32,10 +31,12 @@ function initial_editor(){
     function add_tag_html(tag_id, text, autofocus){
         var tag_div = document.createElement("div");
         tag_div.className = tag_id + " tag_item";
-        var text_div = document.createElement("textarea");
-        text_div.innerHTML = text;
+        var text_div = document.createElement("input");
+        text_div.value = text;
         text_div.className = "tag_item_text";
-        text_div.setAttribute("onfocusout", "editor.update_tag('" + tag_id + "', document.getElementsByClassName('" + tag_id + "')[0].firstChild.value)");
+        text_div.setAttribute("type", "text");
+        text_div.setAttribute("size", "25");
+        text_div.setAttribute("maxlength", "25");
         tag_div.appendChild(text_div);
         var delete_btn = document.createElement("input");
         delete_btn.className = "btn btn_delete_tag";
@@ -44,9 +45,13 @@ function initial_editor(){
         delete_btn.setAttribute("onclick", "editor.delete_tag('" + tag_id + "')");
         tag_div.appendChild(delete_btn);
         document.getElementsByClassName("tags_storage")[0].insertBefore(tag_div, document.getElementsByClassName("tags_storage")[0].firstChild);
-        var tag_textarea = document.getElementsByClassName(tag_id)[0].firstChild;
+        var tag_text = document.getElementsByClassName(tag_id)[0].firstChild;
         if (autofocus){
-            tag_textarea.focus();
+            text_div.setAttribute("onfocusout", "editor.update_tag('" + tag_id + "', document.getElementsByClassName('" + tag_id + "')[0].firstChild.value)");
+            tag_text.focus();
+        } else {
+            text_div.setAttribute("readonly", "readonly");
+            text_div.setAttribute("onclick", "editor.add_tag_filter('" + tag_id + "', document.getElementsByClassName('" + tag_id + "')[0].firstChild.value)");
         }
     }
 
@@ -78,8 +83,20 @@ function initial_editor(){
         return tags_iterator;
     }
 
-    function color_tags() {
-
+    function color_tags(edit_area) {
+        var text = edit_area.innerText;
+        for (var i=0; i < localStorage.length; i++){
+            if (/^editor_tag_[0-9]+$/.test(localStorage.key(i))){
+                var regex = new RegExp("(^|[^A-Za-z0-9_А-Яа-я])(" + localStorage.getItem(localStorage.key(i)) + ")([^A-Za-z0-9_А-Яа-я]|$)");
+                if (text.search(regex) !== -1){
+                    text = text.replace(regex, function (str, p1, p2) {
+                        var extreme_symbols = str.split(p2);
+                        return extreme_symbols[0] + "<span class='tag_in_text'>" + localStorage.getItem(localStorage.key(i)) + "</span>" + extreme_symbols[1];
+                    });
+                }
+            }
+        }
+        return text;
     }
 
     function open_edit_window(note_text){
@@ -87,11 +104,31 @@ function initial_editor(){
         edit_layout.style.display = "block";
         var edit_area = document.getElementsByClassName("edit_note_area")[0];
         if (note_text){
-            edit_area.value = note_text;
+            edit_area.innerHTML = note_text;
         } else {
-            edit_area.value = "";
+            edit_area.innerHTML = "";
         }
-        color_tags();
+        edit_area.innerHTML = color_tags(edit_area);
+    }
+
+    function save_new_tags(edit_area){
+        var text = edit_area.innerText;
+        var tags_for_check;
+        var regex = new RegExp("#[A-Za-z0-9_А-Яа-я]+", "g");
+        tags_for_check = text.match(regex);
+        for (var j = 0; j < tags_for_check.length; j ++) {
+            var check_tag = true;
+            for (var i = 0; i < localStorage.length; i++) {
+                if (/^editor_tag_[0-9]+$/.test(localStorage.key(i))) {
+                    if (localStorage.getItem(localStorage.key(i)) === tags_for_check[j]) {
+                        check_tag = false;
+                    }
+                }
+            }
+            if (check_tag) {
+                editor.create_tag(tags_for_check[j], false);
+            }
+        }
     }
     
     function close_edit_window(){
@@ -99,27 +136,44 @@ function initial_editor(){
         edit_layout.style.display = "none";
     }
 
+    function filter_tags(tags) {
+        document.getElementsByClassName("notes_storage")[0].innerHTML = "";
+        if (tags.length === 0){
+            for (var i = 0; i < localStorage.length; i ++){
+                if (/^editor_note_[0-9]+$/.test(localStorage.key(i))){
+                    add_note_html(localStorage.key(i), localStorage.getItem(localStorage.key(i)));
+                }
+            }
+        } else {
+            for (var i = 0; i < localStorage.length; i ++){
+                if (/^editor_note_[0-9]+$/.test(localStorage.key(i))){
+                    var check_note = false;
+                    for (var j = 0; j < tags.length; j ++){
+                        if (/^#[A-Za-z0-9_А-Яа-я]+$/.test(tags[j][1])){
+                            if (localStorage.getItem(localStorage.key(i)).search(tags[j][1]) !== -1){
+                                check_note = true;
+                            }
+                        }
+                    }
+                    if (check_note){
+                        add_note_html(localStorage.key(i), localStorage.getItem(localStorage.key(i)));
+                    }
+                }
+            }
+        }
+    }
+
     return {
         init: function (){
             notes_number = get_notes_number();
             tags_number = get_tags_number();
-            if (notes_number === 0) {
-                notes_number ++;
-                localStorage.setItem("editor_note_" + notes_number, "Первая заметка :) #first_tag");
-                add_note_html("editor_note_" + notes_number, "Первая заметка :) #first_tag");
-            }
-            if (tags_number === 0) {
-                tags_number ++;
-                localStorage.setItem("editor_tag_" + tags_number, "#first_tag");
-                add_tag_html("editor_tag_" + tags_number, "#first_tag", false);
-            }
         },
 
         create_note: function (){
             open_edit_window();
             var save_btn = document.getElementsByClassName("btn_save_note")[0];
             save_btn.onclick = function(){
-                editor.save_note(document.getElementsByClassName("edit_note_area")[0].value);
+                editor.save_note(document.getElementsByClassName("edit_note_area")[0].textContent, document.getElementsByClassName("edit_note_area")[0].innerHTML);
                 close_edit_window();
             }
         },
@@ -128,7 +182,7 @@ function initial_editor(){
             open_edit_window(note_text);
             var save_btn = document.getElementsByClassName("btn_save_note")[0];
             save_btn.onclick = function(){
-                editor.save_note(document.getElementsByClassName("edit_note_area")[0].value, note_id);
+                editor.save_note(document.getElementsByClassName("edit_note_area")[0].textContent, document.getElementsByClassName("edit_note_area")[0].innerHTML, note_id);
                 close_edit_window();
             }
         },
@@ -139,14 +193,22 @@ function initial_editor(){
             deleted_note.remove();
         },
 
-        create_tag: function (){
+        create_tag: function (text, autofocus){
             tags_number ++;
             localStorage.setItem("editor_tag_" + tags_number, "#");
-            add_tag_html("editor_tag_" + tags_number, "#", true);
+            if (autofocus === false){
+                add_tag_html("editor_tag_" + tags_number, text || "#", autofocus);
+            } else {
+                add_tag_html("editor_tag_" + tags_number, text || "#", true);
+            }
+
         },
 
         update_tag: function (tag, tag_text){
             localStorage.setItem(tag, tag_text);
+            var tag_item = document.getElementsByClassName(tag)[0].firstChild;
+            tag_item.setAttribute("readonly", "readonly");
+            tag_item.setAttribute("onclick", "editor.add_tag_filter('" + tag + "', '" + tag_text + "')");
         },
 
         delete_tag: function (tag){
@@ -155,27 +217,44 @@ function initial_editor(){
             deleted_tag.remove();
         },
 
-        pass_tag_filter: function (){
-
+        pass_tag_filter: function (tag, tag_text){
+            document.getElementsByClassName(tag)[0].style.background = "#ffffff";
+            document.getElementsByClassName(tag)[0].firstChild.style.background = "#ffffff";
+            var new_array = [tag, tag_text];
+            var tag_index = tags_for_filter.indexOf(new_array);
+            console.log("! " + tag_index);
+            tags_for_filter.splice(tag_index, 1);
+            console.log(tags_for_filter);
+            var tag_item = document.getElementsByClassName(tag)[0].firstChild;
+            tag_item.setAttribute("onclick", "editor.add_tag_filter('" + tag + "', '" + tag_text + "')");
+            filter_tags(tags_for_filter);
         },
 
-        add_tag_filter: function (){
-
+        add_tag_filter: function (tag, tag_text){
+            document.getElementsByClassName(tag)[0].style.background = "#eeeeee";
+            document.getElementsByClassName(tag)[0].firstChild.style.background = "#eeeeee";
+            var new_array = [tag, tag_text];
+            tags_for_filter.splice(1, 0, new_array);
+            console.log(tags_for_filter);
+            var tag_item = document.getElementsByClassName(tag)[0].firstChild;
+            tag_item.setAttribute("onclick", "editor.pass_tag_filter('" + tag + "', '" + tag_text + "')");
+            filter_tags(tags_for_filter);
         },
 
         pass_saving: function (){
             close_edit_window();
         },
 
-        save_note: function (note_text, note){
+        save_note: function (note_text, note_html, note){
             if (note){
                 localStorage.setItem(note, note_text);
-                edit_note_html(note, note_text);
+                edit_note_html(note, note_html);
             } else {
                 notes_number ++;
                 localStorage.setItem("editor_note_" + notes_number, note_text);
-                add_note_html("editor_note_" + notes_number, note_text);
+                add_note_html("editor_note_" + notes_number, note_html);
             }
+            save_new_tags(document.getElementsByClassName('edit_note_area')[0]);
         }
     }
 }

@@ -16,7 +16,7 @@ body * {
     margin-top: 30px;
     position: relative;
     display: flex;
-    width: 70%;
+    width: 75%;
     background-color: #ffffff;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     flex-wrap: wrap;
@@ -130,12 +130,13 @@ body * {
 .edit_note_area {
     width: 90%;
     background-color: #ffffff;
-    resize: none;
     height: 70%;
+    text-align: left;
     overflow-y: auto;
     margin: 10px auto;
     border: none;
-    outline: none;
+    cursor: pointer;
+    padding: 5px;
 }
 
 .btn_save_note {
@@ -163,17 +164,23 @@ body * {
     padding: 1px 5% 5px 5%;
 }
 
-.tag_item:first-child {
-    padding-top: 5%;
-}
-
 .tag_item_text {
-    background-color: #fafafa;
-    resize: vertical;
-    word-wrap: break-word;
-    overflow: visible;
+    cursor: pointer;
+    background-color: #ffffff;
     vertical-align: middle;
     border-radius: 5px;
     border: none;
-    cursor: pointer;
+}
+
+.edit_note_window .tag_in_text {
+    color: #428f45;
+}
+
+.note_item_text .tag_in_text {
+    color: #000000;
+    font-size: 20px;
+}
+
+.note_item_text * {
+    font-size: 20px;
 }
