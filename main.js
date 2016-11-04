@@ -85,12 +85,10 @@ function initial_editor(){
 
     function color_tags(edit_area) {
         var text = edit_area.innerText;
-        for (var i=0; i < localStorage.length; i++){
-            if (/^editor_tag_[0-9]+$/.test(localStorage.key(i))){
-                var regex = new RegExp(localStorage.getItem(localStorage.key(i)), "g");
-                text = text.replace(regex, "<span class='tag_in_text'>" + localStorage.getItem(localStorage.key(i)) + "</span>");
-            }
-        }
+        var regex = new RegExp("#[A-Za-z0-9_А-Яа-я]+", "g");
+        text = text.replace(regex, function(str){
+            return "<span class='tag_in_text'>" + str + "</span>";
+        });
         return text;
     }
 
@@ -110,7 +108,7 @@ function initial_editor(){
         var text = edit_area.innerText;
         var tags_for_check;
         var regex = new RegExp("#[A-Za-z0-9_А-Яа-я]+", "g");
-        tags_for_check = text.match(regex);
+        tags_for_check = text.match(regex) || [];
         for (var j = 0; j < tags_for_check.length; j ++) {
             var check_tag = true;
             for (var i = 0; i < localStorage.length; i++) {
