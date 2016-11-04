@@ -87,13 +87,8 @@ function initial_editor(){
         var text = edit_area.innerText;
         for (var i=0; i < localStorage.length; i++){
             if (/^editor_tag_[0-9]+$/.test(localStorage.key(i))){
-                var regex = new RegExp("(^|[^A-Za-z0-9_А-Яа-я])(" + localStorage.getItem(localStorage.key(i)) + ")([^A-Za-z0-9_А-Яа-я]|$)");
-                if (text.search(regex) !== -1){
-                    text = text.replace(regex, function (str, p1, p2) {
-                        var extreme_symbols = str.split(p2);
-                        return extreme_symbols[0] + "<span class='tag_in_text'>" + localStorage.getItem(localStorage.key(i)) + "</span>" + extreme_symbols[1];
-                    });
-                }
+                var regex = new RegExp(localStorage.getItem(localStorage.key(i)), "g");
+                text = text.replace(regex, "<span class='tag_in_text'>" + localStorage.getItem(localStorage.key(i)) + "</span>");
             }
         }
         return text;
@@ -195,7 +190,7 @@ function initial_editor(){
 
         create_tag: function (text, autofocus){
             tags_number ++;
-            localStorage.setItem("editor_tag_" + tags_number, "#");
+            localStorage.setItem("editor_tag_" + tags_number, text || "#");
             if (autofocus === false){
                 add_tag_html("editor_tag_" + tags_number, text || "#", autofocus);
             } else {
@@ -221,10 +216,13 @@ function initial_editor(){
             document.getElementsByClassName(tag)[0].style.background = "#ffffff";
             document.getElementsByClassName(tag)[0].firstChild.style.background = "#ffffff";
             var new_array = [tag, tag_text];
-            var tag_index = tags_for_filter.indexOf(new_array);
-            console.log("! " + tag_index);
+            var tag_index = 0;
+            for (var i = 0; i < tags_for_filter.length; i ++){
+                if (tags_for_filter[i][0] === new_array[0] && tags_for_filter[i][1] === new_array[1]){
+                    tag_index = i;
+                }
+            }
             tags_for_filter.splice(tag_index, 1);
-            console.log(tags_for_filter);
             var tag_item = document.getElementsByClassName(tag)[0].firstChild;
             tag_item.setAttribute("onclick", "editor.add_tag_filter('" + tag + "', '" + tag_text + "')");
             filter_tags(tags_for_filter);
@@ -235,7 +233,6 @@ function initial_editor(){
             document.getElementsByClassName(tag)[0].firstChild.style.background = "#eeeeee";
             var new_array = [tag, tag_text];
             tags_for_filter.splice(1, 0, new_array);
-            console.log(tags_for_filter);
             var tag_item = document.getElementsByClassName(tag)[0].firstChild;
             tag_item.setAttribute("onclick", "editor.pass_tag_filter('" + tag + "', '" + tag_text + "')");
             filter_tags(tags_for_filter);
