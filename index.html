@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Your notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="editor_container">
+        <div class="editor_tags">
+            <div class="create_tag_container">
+                <input class="btn btn_create_tag" type="button" onclick="editor.create_tag()" value="Новый тег">
+            </div>
+            <div class="tags_storage"></div>
+        </div>
+        <div class="editor_notes">
+            <div class="create_note_container">
+                <input class="btn btn_create_note" type="button" onclick="editor.create_note()" value="Создать заметку">
+            </div>
+            <div class="notes_storage"></div>
+        </div>
+        <div class="edit_note_layout">
+            <div class="edit_note_window">
+                <textarea class="edit_note_area" placeholder="Введите текст заметки..."></textarea>
+                <input class="btn btn_pass_saving" type="button" onclick="editor.pass_saving()" value="Отмена">
+                <input class="btn btn_save_note" type="button" value="Сохранить">
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="main.js"></script>
+</body>
+</html>
